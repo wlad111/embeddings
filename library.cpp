@@ -1,8 +1,9 @@
 #include "library.h"
-#include "extern/ml_lib/cpp/core/vec.h"
-
+#include <core/vec.h>
 #include <iostream>
 
 void hello() {
+    Vec test_vec;
+
     std::cout << "Hello, World!" << std::endl;
 }
