@@ -6,4 +6,10 @@ add_library(decomp
         MultiDecompBuilder.h
         MultiDecompBuilder.cpp)
 
-target_link_libraries(decomp core util)
+target_link_libraries(decomp core util base)
+
+target_include_directories(decomp INTERFACE
+        PUBLIC $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/
+        )
