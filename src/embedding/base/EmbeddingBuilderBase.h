@@ -11,8 +11,10 @@
 #include <unordered_map>
 #include <iostream>
 
-//TODO ask IK about coocurrence matrix
 
+
+
+//TODO add destructor
 class EmbeddingBuilderBase : Embedding<string>::Builder {
 
 private:
