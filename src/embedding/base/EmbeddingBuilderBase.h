@@ -9,6 +9,9 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <iostream>
+
+//TODO ask IK about coocurrence matrix
 
 class EmbeddingBuilderBase : Embedding<string>::Builder {
 
@@ -38,6 +41,23 @@ protected:
     int wleft();
     int wright();
 
+    //TODO files processing
+    void acquireDictionary();
+    std::string normalize(std::string word);
+
+    class ScoreCalculator {
+    private:
+        std::vector<double> scores;
+        std::vector<double> weights;
+        std::vector<int64_t> counts;
+    public:
+        ScoreCalculator(int dim);
+        void adjust(int i, int j, double weight, double value);
+        double gloveScore();
+        int64_t  count();
+    };
+
+
 public:
     void window (Embedding<string>::WindowType type, int left, int right) override;
     void step (double step) override;
@@ -45,6 +65,7 @@ public:
     void minWordCount (int count) override;
     Embedding<string> build() override;
     //TODO add other functions & implement them
+
 };
 
 
