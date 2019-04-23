@@ -12,8 +12,8 @@ void CoocBasedBuilder::merge(std::vector<int64_t> acc) {
 
 }
 
-Embedding<std::string> CoocBasedBuilder::fit() {
-    return Embedding<string>();
+void CoocBasedBuilder::fit() {
+
 }
 
 std::vector<std::string> CoocBasedBuilder::dict() {
@@ -36,6 +36,6 @@ int32_t CoocBasedBuilder::unpackB(std::vector<int64_t> &cooc, int32_t v) {
     return 0;
 }
 
-Embedding<std::string> CoocBasedBuilder::build() {
-    return EmbeddingBuilderBase::build();
+Embedding<string>* CoocBasedBuilder::build() {
+
 }

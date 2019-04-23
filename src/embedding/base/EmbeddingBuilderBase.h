@@ -10,12 +10,15 @@
 #include <vector>
 #include <unordered_map>
 #include <iostream>
-
+#include <fstream>
+#include <boost/range/adaptors.hpp>
+#include <boost/range/istream_range.hpp>
 
 
 
 //TODO add destructor
-class EmbeddingBuilderBase : Embedding<string>::Builder {
+class EmbeddingBuilderBase
+        : public Embedding<string>::Builder {
 
 private:
     int minCount_ = 5;
@@ -32,7 +35,9 @@ protected:
     //TODO initialize wordsIndex
     std::unordered_map<string, int> wordsIndex;
 
-    virtual Embedding<string> fit() = 0;
+    std::string path_;
+
+    virtual void fit() = 0;
 
     std::vector<string> dict();
     int index(string word);
@@ -43,9 +48,10 @@ protected:
     int wleft();
     int wright();
 
+
     //TODO files processing
     void acquireDictionary();
-    std::string normalize(std::string word);
+    std::string normalize(std::string &word);
 
     class ScoreCalculator {
     private:
@@ -65,7 +71,8 @@ public:
     void step (double step) override;
     void iterations (int count) override;
     void minWordCount (int count) override;
-    Embedding<string> build() override;
+    Embedding<string>* build() override;
+    void file(const std::string &path) override;
     //TODO add other functions & implement them
 
 };

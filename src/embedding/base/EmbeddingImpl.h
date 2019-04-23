@@ -12,8 +12,8 @@
 #include <iostream>
 
 template <class T>
-class EmbeddingImpl :
-        Embedding<T>{
+class EmbeddingImpl
+        : public Embedding<T>{
 private:
     std::unordered_map<T, Vec> mapping;
     std::vector<T> vocab;

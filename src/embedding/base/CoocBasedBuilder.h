@@ -12,7 +12,8 @@
 //TODO maybe add logger
 
 
-class CoocBasedBuilder:EmbeddingBuilderBase {
+class CoocBasedBuilder
+        : public EmbeddingBuilderBase {
 private:
     const int32_t capacity = 50000000;
 
@@ -25,7 +26,7 @@ private:
     void merge(std::vector<int64_t> acc);
 
 protected:
-    Embedding<std::string> fit() override ;
+    void fit() override ;
 
     std::vector<std::string> dict();
 
@@ -40,7 +41,7 @@ protected:
     int32_t unpackB(std::vector<int64_t > &cooc, int32_t v);
 
 public:
-    Embedding<std::string> build() override;
+    Embedding<string>* build() override;
 
 };
 

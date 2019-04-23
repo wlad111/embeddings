@@ -1,0 +1,3 @@
+project(embeddings_src_apps_embedding)
+
+add_subdirectory(GloVe)

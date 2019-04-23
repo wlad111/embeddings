@@ -5,6 +5,11 @@
 #include "EmbeddingBuilderBase.h"
 #include <cctype>
 #include <algorithm>
+#include <iostream>
+#include <sstream>
+#include <chrono>
+#include <ctime>
+
 
 std::vector<string> EmbeddingBuilderBase::dict() {
     return wordsList;
@@ -39,10 +44,40 @@ int EmbeddingBuilderBase::wright() {
 }
 
 void EmbeddingBuilderBase::acquireDictionary() {
-//TODO implement acquireDictionary()
+//TODO add reading from file
+    if (!dictReady) {
+        std::cout << "Generating dictionary" << std::endl;
+        std::ifstream source(path_);
+        std::unordered_map<std::string, int32_t> wordsCount;
+        std::string word;
+        for (source >> word; !source.eof(); source >> word) {
+            word = normalize(word);
+            wordsCount[word]++;
+            //TODO add filter(letter)
+        }
+
+        std::vector<std::pair<int32_t, std::string>> words;
+
+        for (auto entry : wordsCount) {
+            words.push_back(std::make_pair(entry.second, entry.first));
+        }
+
+        std::sort(words.begin(), words.end(), std::greater<>());
+
+        //TODO write this to file
+
+        for (auto word : words) {
+            if (wordsCount[word.second] >= minCount_) {
+                wordsIndex[word.second] = wordsList.size();
+                wordsList.push_back(word.second);
+            }
+        }
+        dictReady = true;
+
+    }
 }
 
-std::string EmbeddingBuilderBase::normalize(std::string word) {
+std::string EmbeddingBuilderBase::normalize(std::string &word) {
     size_t initialLength = word.size();
     size_t len = initialLength;
     int32_t st = 0;
@@ -76,9 +111,23 @@ void EmbeddingBuilderBase::minWordCount(int count) {
     minCount_ = count;
 }
 
-Embedding<string> EmbeddingBuilderBase::build() {
-    //TODO this is what I have soon to do
+Embedding<string>* EmbeddingBuilderBase::build() {
+    std::cout << "==== Dictionary phase ====" << std::endl;
+    auto start = std::chrono::system_clock::now();
+    acquireDictionary();
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end-start;
+    std::cout << "==== " << elapsed_seconds.count() << "s ====" << std::endl;
+    return &this;
 }
+
+void EmbeddingBuilderBase::file(const std::string &path) {
+    path_ = path;
+}
+
+//std::ifstream EmbeddingBuilderBase::source(std::string path) {
+//
+//}
 
 EmbeddingBuilderBase::ScoreCalculator::ScoreCalculator(int dim){
     counts.resize(dim);
