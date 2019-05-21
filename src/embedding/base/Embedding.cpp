@@ -3,3 +3,18 @@
 //
 
 #include "Embedding.h"
+
+template<class T>
+Embedding<T>::Builder::~Builder() {
+
+}
+
+template<class T>
+Embedding<T>::~Embedding() {
+
+}
+
+template<>
+Embedding<std::string>::Builder::~Builder() {
+
+}

@@ -3,9 +3,12 @@
 //
 
 #include <iostream>
-//#include <base/CoocBasedBuilder.h>
+#include <base/CoocBasedBuilder.h>
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    std::string dict_path("hobbit.txt");
+    CoocBasedBuilder test(dict_path);
+    test.fit();
+    std::cout << dict_path << std::endl;
     return 0;
 }

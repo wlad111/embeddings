@@ -26,7 +26,6 @@ private:
     void merge(std::vector<int64_t> acc);
 
 protected:
-    void fit() override ;
 
     std::vector<std::string> dict();
 
@@ -40,9 +39,12 @@ protected:
 
     int32_t unpackB(std::vector<int64_t > &cooc, int32_t v);
 
-public:
-    Embedding<string>* build() override;
+    //std::vector<uint64_t> positionsStream();
 
+public:
+    void build() override;
+    void fit() override;
+    explicit CoocBasedBuilder(std::string &dict_path);
 };
 
 

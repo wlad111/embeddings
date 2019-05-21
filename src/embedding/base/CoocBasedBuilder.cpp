@@ -5,7 +5,10 @@
 #include "CoocBasedBuilder.h"
 
 void CoocBasedBuilder::acquireCoocurrences() {
+    if (!coocReady) {
+        std::vector<std::vector<int64_t >> accumulators;
 
+    }
 }
 
 void CoocBasedBuilder::merge(std::vector<int64_t> acc) {
@@ -13,7 +16,8 @@ void CoocBasedBuilder::merge(std::vector<int64_t> acc) {
 }
 
 void CoocBasedBuilder::fit() {
-
+    std::cout << "fit" << std::endl;
+    acquireDictionary();
 }
 
 std::vector<std::string> CoocBasedBuilder::dict() {
@@ -36,6 +40,17 @@ int32_t CoocBasedBuilder::unpackB(std::vector<int64_t> &cooc, int32_t v) {
     return 0;
 }
 
-Embedding<string>* CoocBasedBuilder::build() {
+void CoocBasedBuilder::build() {
 
 }
+
+CoocBasedBuilder::CoocBasedBuilder(std::string &dict_path) : EmbeddingBuilderBase(dict_path) {
+    std::cout << "CoocBasedBuilder" << std::endl;
+}
+
+//std::vector<uint64_t> CoocBasedBuilder::positionsStream() {
+    std::vector<uint64_t> coocStream;
+
+//}
+
+

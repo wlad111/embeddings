@@ -11,8 +11,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <fstream>
-#include <boost/range/adaptors.hpp>
-#include <boost/range/istream_range.hpp>
+
 
 
 
@@ -29,7 +28,7 @@ private:
 
     int iterations_ = 25;
     double step_ = 0.01;
-    bool dictReady;
+    bool dictReady = false;
 protected:
     std::vector<string> wordsList;
     //TODO initialize wordsIndex
@@ -52,6 +51,9 @@ protected:
     //TODO files processing
     void acquireDictionary();
     std::string normalize(std::string &word);
+    bool anyLetter(std::string &word);
+
+    std::vector<int64_t> positionsStream();
 
     class ScoreCalculator {
     private:
@@ -65,13 +67,23 @@ protected:
         int64_t  count();
     };
 
+    int64_t pack(int64_t a, int64_t b, int8_t dist);
+
+    int32_t unpackA(int64_t next);
+    int32_t unpackB(int64_t next);
+
+    double unpackWeight(int64_t next);
+
+    int32_t unpackDist(int64_t next);
+
 
 public:
+    EmbeddingBuilderBase(std::string &s);
     void window (Embedding<string>::WindowType type, int left, int right) override;
     void step (double step) override;
     void iterations (int count) override;
     void minWordCount (int count) override;
-    Embedding<string>* build() override;
+    void build() override;
     void file(const std::string &path) override;
     //TODO add other functions & implement them
 

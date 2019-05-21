@@ -41,7 +41,7 @@ public:
         virtual void minWordCount (int count) = 0;
         virtual void iterations (int count) = 0;
         virtual void step (double step) = 0;
-        virtual Embedding<T>* build () = 0;
+        virtual void build () = 0;
         virtual void window (WindowType type, int left, int right) = 0;
 
         virtual ~Builder();
