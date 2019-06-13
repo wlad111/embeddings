@@ -61,7 +61,6 @@ void EmbeddingBuilderBase::acquireDictionary() {
                 wordsCount[word]++;
             }
             i++;
-            //TODO add filter(letter)
         }
         std::cout << i << " words processed" << std::endl;
         std::vector<std::pair<int32_t, std::string>> words;
@@ -73,8 +72,6 @@ void EmbeddingBuilderBase::acquireDictionary() {
         std::sort(words.begin(), words.end(), std::greater<>());
 
         std::cout << "====Writing dictionary to file====" << std::endl;
-
-        //TODO write this to file
         std::string dict_path = "dict.csv";
         std::ofstream dictfs(dict_path);
         dictfs << "word" << "," << "freq" << std::endl;
@@ -171,18 +168,63 @@ int32_t EmbeddingBuilderBase::unpackDist(int64_t next) {
 }
 
 std::vector<int64_t> EmbeddingBuilderBase::positionsStream() {
+    std::cout << "positions stream" << std::endl;
     std::ifstream source(path_);
-    std::string line;
-    std::string newLine = "777newline777";
+    //std::string line;
+    //std::string newLine = "777newline777";
     int64_t nLine = 0;
-    while (std::getline(source, line)){
-        if ((++nLine) % 10000 == 0) {
-            std::cout << nLine << " lines processed" << std::endl;
-        }
-        line += newLine;
 
+    std::vector<int32_t> pos_queue;
+    int32_t offset = 0;
+
+    std::vector<int64_t> res;
+    std::string word;
+    int64_t i = 0;
+    for (source >> word; !source.eof(); source >> word) {
+        if (i % 100000 == 0) {
+            std::cout << i << " words processed" << std::endl;
+        }
+        int32_t idx = wordsIndex[normalize(word)];
+        // process here indices
+
+        int32_t pos = pos_queue.size();
+        int64_t out[windowRight + windowLeft];
+        int32_t outIndex = 0;
+        for (int j = offset; j < pos; j++) {
+            int8_t distance = pos - i;
+            if (distance == 0) {
+                std::cout << "Zero distance occured! pos:" << pos << "i: " << j << std::endl;
+            }
+            if (distance <= windowRight) {
+                out[outIndex++] = pack(pos_queue[j], idx, distance);
+            }
+            if (distance <= windowLeft) {
+                out[outIndex++] = pack(idx, pos_queue[j], -distance);
+            }
+        }
+        pos_queue.push_back(idx);
+        if (pos_queue.size() > std::max(windowLeft, windowRight)) {
+            offset++;
+            if (offset > 1000 - std::max(windowLeft, windowRight)) {
+                pos_queue.erase(pos_queue.begin(), pos_queue.begin() + offset);
+                offset = 0;
+            }
+        }
+        for (auto entry: out) {
+            res.push_back(entry);
+        }
+        i++;
     }
-    return std::vector<int64_t>();
+
+
+//    while (std::getline(source, line)){
+//        if ((++nLine) % 10000 == 0) {
+//            std::cout << nLine << " lines processed" << std::endl;
+//        }
+//        line += newLine;
+//
+//    }
+    return res;
 }
 
 EmbeddingBuilderBase::EmbeddingBuilderBase(std::string &s) {
