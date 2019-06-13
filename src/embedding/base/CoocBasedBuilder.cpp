@@ -6,8 +6,13 @@
 
 void CoocBasedBuilder::acquireCoocurrences() {
     if (!coocReady) {
-        std::vector<std::vector<int64_t >> accumulators;
+        std::cout << "Generating cooccurences for " << path_ << std::endl;
+        //TODO add smthg like rowLocks
+        std::vector<std::vector<int64_t>> accumulators;
+        cooc_.resize(wordsList.size());
 
+        auto stream = positionsStream();
+        return;
     }
 }
 
@@ -18,6 +23,7 @@ void CoocBasedBuilder::merge(std::vector<int64_t> acc) {
 void CoocBasedBuilder::fit() {
     std::cout << "fit" << std::endl;
     acquireDictionary();
+    acquireCoocurrences();
 }
 
 std::vector<std::string> CoocBasedBuilder::dict() {

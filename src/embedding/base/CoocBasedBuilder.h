@@ -39,7 +39,6 @@ protected:
 
     int32_t unpackB(std::vector<int64_t > &cooc, int32_t v);
 
-    //std::vector<uint64_t> positionsStream();
 
 public:
     void build() override;

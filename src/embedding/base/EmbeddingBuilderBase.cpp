@@ -191,9 +191,9 @@ std::vector<int64_t> EmbeddingBuilderBase::positionsStream() {
         int64_t out[windowRight + windowLeft];
         int32_t outIndex = 0;
         for (int j = offset; j < pos; j++) {
-            int8_t distance = pos - i;
+            int8_t distance = pos - j;
             if (distance == 0) {
-                std::cout << "Zero distance occured! pos:" << pos << "i: " << j << std::endl;
+                std::cout << "Zero distance occured! pos: " << pos << "i: " << j << std::endl;
             }
             if (distance <= windowRight) {
                 out[outIndex++] = pack(pos_queue[j], idx, distance);
