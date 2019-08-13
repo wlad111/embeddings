@@ -6,7 +6,7 @@
 #include <base/CoocBasedBuilder.h>
 
 int main() {
-    std::string dict_path("hobbit.txt");
+    std::string dict_path("text8");
     CoocBasedBuilder test(dict_path);
     test.fit();
     std::cout << dict_path << std::endl;

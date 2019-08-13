@@ -14,15 +14,13 @@
 
 
 
-
+//TODO add path field, use std::filesystem::path
 //TODO add destructor
 class EmbeddingBuilderBase
         : public Embedding<string>::Builder {
 
 private:
     int minCount_ = 5;
-    int windowLeft = 15;
-    int windowRight = 15;
 
     typename Embedding<string>::WindowType window_type = Embedding<string>::WindowType::LINEAR;
 
@@ -77,6 +75,8 @@ protected:
     int32_t unpackDist(int64_t next);
 
 
+    int windowRight = 15;
+    int windowLeft = 15;
 public:
     EmbeddingBuilderBase(std::string &s);
     void window (Embedding<string>::WindowType type, int left, int right) override;

@@ -3,16 +3,80 @@
 //
 
 #include "CoocBasedBuilder.h"
+#include <mutex>
 
 void CoocBasedBuilder::acquireCoocurrences() {
     if (!coocReady) {
         std::cout << "Generating cooccurences for " << path_ << std::endl;
-        //TODO add smthg like rowLocks
+
+        auto start = std::chrono::steady_clock::now();
+
+
+        //TODO make stream of positions here!
+
+        std::ifstream source(path_);
+        //std::string line;
+        //std::string newLine = "777newline777";
+        int64_t nLine = 0;
+
+        std::vector<int32_t> pos_queue;
+        int32_t offset = 0;
+
+
+        std::vector<std::lock_guard<std::mutex>> rowLocks;
+        rowLocks.resize(wordsList.size());
+
+        std::vector<int64_t> res;
+        std::string word;
+        int64_t i = 0;
+        for (source >> word; !source.eof(); source >> word) {
+            if (i % 100000 == 0) {
+                auto end = std::chrono::steady_clock::now();
+                int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+                std::cout << i << " words processed " << " for " << elapsed << "ms" << std::endl;
+            }
+            int32_t idx = wordsIndex[normalize(word)];
+
+            int32_t pos = pos_queue.size();
+            int64_t out[windowRight + windowLeft];
+            int32_t outIndex = 0;
+            for (int j = offset; j < pos; j++) {
+                int8_t distance = pos - j;
+                if (distance == 0) {
+                    std::cout << "Zero distance occured! pos: " << pos << "i: " << j << std::endl;
+                }
+                if (distance <= windowRight) {
+                    out[outIndex++] = pack(pos_queue[j], idx, distance);
+                }
+                if (distance <= windowLeft) {
+                    out[outIndex++] = pack(idx, pos_queue[j], -distance);
+                }
+            }
+            pos_queue.push_back(idx);
+            if (pos_queue.size() > std::max(windowLeft, windowRight)) {
+                offset++;
+                if (offset > 1000 - std::max(windowLeft, windowRight)) {
+                    pos_queue.erase(pos_queue.begin(), pos_queue.begin() + offset);
+                    offset = 0;
+                }
+            }
+            for (auto entry: out) {
+                res.push_back(entry);
+            }
+            i++;
+        }
+
+
         std::vector<std::vector<int64_t>> accumulators;
         cooc_.resize(wordsList.size());
 
-        auto stream = positionsStream();
-        return;
+
+        //TODO add here rowLocks
+
+        for (int i = 0; i < wordsList.size(); i++) {
+
+        }
+
     }
 }
 
@@ -23,7 +87,7 @@ void CoocBasedBuilder::merge(std::vector<int64_t> acc) {
 void CoocBasedBuilder::fit() {
     std::cout << "fit" << std::endl;
     acquireDictionary();
-    acquireCoocurrences();
+    //acquireCoocurrences();
 }
 
 std::vector<std::string> CoocBasedBuilder::dict() {

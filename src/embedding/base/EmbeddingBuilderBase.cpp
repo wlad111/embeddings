@@ -48,6 +48,10 @@ void EmbeddingBuilderBase::acquireDictionary() {
 //TODO add reading from file
     if (!dictReady) {
         std::cout << "====Generating dictionary====" << std::endl;
+
+        auto start = std::chrono::steady_clock::now();
+
+
         std::ifstream source(path_);
         std::unordered_map<std::string, int32_t> wordsCount;
         std::string word;
@@ -71,6 +75,11 @@ void EmbeddingBuilderBase::acquireDictionary() {
 
         std::sort(words.begin(), words.end(), std::greater<>());
 
+        auto end = std::chrono::steady_clock::now();
+        int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "Generated dictionary for " << elapsed << "ms" << std::endl;
+
+
         std::cout << "====Writing dictionary to file====" << std::endl;
         std::string dict_path = "dict.csv";
         std::ofstream dictfs(dict_path);
@@ -86,6 +95,9 @@ void EmbeddingBuilderBase::acquireDictionary() {
             }
         }
         dictReady = true;
+
+
+
 
     }
 }
@@ -185,7 +197,6 @@ std::vector<int64_t> EmbeddingBuilderBase::positionsStream() {
             std::cout << i << " words processed" << std::endl;
         }
         int32_t idx = wordsIndex[normalize(word)];
-        // process here indices
 
         int32_t pos = pos_queue.size();
         int64_t out[windowRight + windowLeft];

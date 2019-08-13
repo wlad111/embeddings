@@ -17,6 +17,8 @@ class CoocBasedBuilder
 private:
     const int32_t capacity = 50000000;
 
+    int32_t dense_count_ = 1000;
+
     std::vector<std::vector<int64_t>> cooc_;
 
     bool coocReady = false;
