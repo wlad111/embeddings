@@ -7,6 +7,8 @@
 
 #include "EmbeddingBuilderBase.h"
 #include <vector>
+#include <condition_variable>
+#include <mutex>
 
 //TODO maybe add some typedefs (for example LongSeq for std::vector<int64_t>)
 //TODO maybe add logger
@@ -26,6 +28,16 @@ private:
     void acquireCoocurrences();
 
     void merge(std::vector<int64_t> acc);
+
+    std::mutex mt;
+    std::condition_variable cv;
+    int bufferSize = 1'000'000;
+    std::deque<std::string> buffer;
+
+    void readWords (std::ifstream& reader);
+    void sendWords();
+    void processWords(std::deque<std::string>& buf);
+    int countwords = 0;
 
 protected:
 

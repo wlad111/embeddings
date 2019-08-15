@@ -3,7 +3,43 @@
 //
 
 #include "CoocBasedBuilder.h"
-#include <mutex>
+#include <thread>
+//#include <mutex>
+//#include <condition_variable>
+
+//producer
+void CoocBasedBuilder::readWords(std::ifstream &reader) {
+    {
+
+        //std::unique_lock<std::mutex> l(mt);
+        std::string word;
+        int i = 0;
+        for (reader >> word;  !reader.eof() && i < bufferSize; reader >> word) {
+            buffer.push_back(word);
+            i++;
+        }
+    }
+    //cv.notify_one();
+}
+
+//consumer
+void CoocBasedBuilder::sendWords() {
+    {
+        std::unique_lock<std::mutex> l(mt);
+        /*while (buffer.empty()) {
+            cv.wait(l);
+        }*/
+        processWords(buffer);
+    }
+}
+
+void CoocBasedBuilder::processWords(std::deque<std::string> &buf) {
+    std::string word;
+    while (!buf.empty()) {
+        word = buf.front();
+        buf.pop_front();
+    }
+}
 
 void CoocBasedBuilder::acquireCoocurrences() {
     if (!coocReady) {
@@ -13,18 +49,18 @@ void CoocBasedBuilder::acquireCoocurrences() {
 
 
         //TODO make stream of positions here!
-
+        std::cout << "Streaming words from corpus " << std::endl;
         std::ifstream source(path_);
         //std::string line;
         //std::string newLine = "777newline777";
-        int64_t nLine = 0;
+        /*int64_t nLine = 0;
 
         std::vector<int32_t> pos_queue;
         int32_t offset = 0;
 
 
         std::vector<std::lock_guard<std::mutex>> rowLocks;
-        rowLocks.resize(wordsList.size());
+//        rowLocks.resize(wordsList.size());
 
         std::vector<int64_t> res;
         std::string word;
@@ -69,13 +105,23 @@ void CoocBasedBuilder::acquireCoocurrences() {
 
         std::vector<std::vector<int64_t>> accumulators;
         cooc_.resize(wordsList.size());
+*/
 
 
-        //TODO add here rowLocks
+/*
+       std::thread t1(&CoocBasedBuilder::readWords, source);
+       std::thread t2(&CoocBasedBuilder::sendWords);
+       t1.join();
+       t2.join();*/
 
-        for (int i = 0; i < wordsList.size(); i++) {
-
+        while (!source.eof()) {
+            readWords(source);
+            sendWords();
         }
+
+        auto end = std::chrono::steady_clock::now();
+        int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "Acquired cooccurences for " << elapsed << "ms" << std::endl;
 
     }
 }
@@ -87,7 +133,7 @@ void CoocBasedBuilder::merge(std::vector<int64_t> acc) {
 void CoocBasedBuilder::fit() {
     std::cout << "fit" << std::endl;
     acquireDictionary();
-    //acquireCoocurrences();
+    acquireCoocurrences();
 }
 
 std::vector<std::string> CoocBasedBuilder::dict() {
@@ -117,6 +163,9 @@ void CoocBasedBuilder::build() {
 CoocBasedBuilder::CoocBasedBuilder(std::string &dict_path) : EmbeddingBuilderBase(dict_path) {
     std::cout << "CoocBasedBuilder" << std::endl;
 }
+
+
+
 
 //std::vector<uint64_t> CoocBasedBuilder::positionsStream() {
     std::vector<uint64_t> coocStream;
