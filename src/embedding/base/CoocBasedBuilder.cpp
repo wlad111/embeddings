@@ -4,14 +4,14 @@
 
 #include "CoocBasedBuilder.h"
 #include <thread>
-//#include <mutex>
-//#include <condition_variable>
+#include <mutex>
+#include <condition_variable>
 
 //producer
 void CoocBasedBuilder::readWords(std::ifstream &reader) {
     {
 
-        //std::unique_lock<std::mutex> l(mt);
+        std::unique_lock<std::mutex> l(mt);
         std::string word;
         int i = 0;
         for (reader >> word;  !reader.eof() && i < bufferSize; reader >> word) {
@@ -19,16 +19,16 @@ void CoocBasedBuilder::readWords(std::ifstream &reader) {
             i++;
         }
     }
-    //cv.notify_one();
+    cv.notify_one();
 }
 
 //consumer
 void CoocBasedBuilder::sendWords() {
     {
         std::unique_lock<std::mutex> l(mt);
-        /*while (buffer.empty()) {
+        while (buffer.empty()) {
             cv.wait(l);
-        }*/
+        }
         processWords(buffer);
     }
 }
@@ -108,16 +108,15 @@ void CoocBasedBuilder::acquireCoocurrences() {
 */
 
 
-/*
-       std::thread t1(&CoocBasedBuilder::readWords, source);
-       std::thread t2(&CoocBasedBuilder::sendWords);
+       std::thread t1(&CoocBasedBuilder::readWords, this, std::ref(source));
+       std::thread t2(&CoocBasedBuilder::sendWords, this);
        t1.join();
-       t2.join();*/
+       t2.join();
 
-        while (!source.eof()) {
+        /*while (!source.eof()) {
             readWords(source);
             sendWords();
-        }
+        }*/
 
         auto end = std::chrono::steady_clock::now();
         int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

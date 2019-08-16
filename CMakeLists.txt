@@ -2,7 +2,13 @@ cmake_minimum_required(VERSION 3.13)
 
 project(embeddings)
 
+
+
 set(CMAKE_CXX_STANDARD 17)
+
+add_compile_options(
+        -lpthread
+)
 
 find_package(Torch REQUIRED)
 
