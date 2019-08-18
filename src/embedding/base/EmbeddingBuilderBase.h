@@ -67,6 +67,7 @@ protected:
 
     int64_t pack(int64_t a, int64_t b, int8_t dist);
 
+    //TODO check all packing and unpacking functions
     int32_t unpackA(int64_t next);
     int32_t unpackB(int64_t next);
 

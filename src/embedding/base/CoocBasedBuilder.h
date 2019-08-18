@@ -10,7 +10,6 @@
 #include <condition_variable>
 #include <mutex>
 
-//TODO maybe add some typedefs (for example LongSeq for std::vector<int64_t>)
 //TODO maybe add logger
 
 
@@ -27,7 +26,7 @@ private:
 
     void acquireCoocurrences();
 
-    void merge(std::vector<int64_t> acc);
+    void merge(std::vector<int64_t> &acc);
 
     std::mutex mt;
     std::condition_variable cv;
@@ -47,12 +46,8 @@ protected:
 
     std::vector<int64_t> cooc(size_t i);
 
-    //TODO add here protected synchronized void cooc(int i, LongSeq set)
 
     float unpackWeight(std::vector<int64_t > &cooc, int32_t v);
-
-    int32_t unpackB(std::vector<int64_t > &cooc, int32_t v);
-
 
 public:
     void build() override;
