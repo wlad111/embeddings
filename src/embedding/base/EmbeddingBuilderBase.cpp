@@ -31,9 +31,7 @@ int EmbeddingBuilderBase::minCount() {
     return minCount_;
 }
 
-Embedding<string>::WindowType EmbeddingBuilderBase::wtype() {
-    return window_type;
-}
+
 
 int EmbeddingBuilderBase::wleft() {
     return windowLeft;
@@ -130,7 +128,6 @@ std::string EmbeddingBuilderBase::normalize(std::string &word) {
 void EmbeddingBuilderBase::window(Embedding<string>::WindowType type, int left, int right) {
     windowLeft = left;
     windowRight = right;
-    window_type = type;
 }
 
 void EmbeddingBuilderBase::step(double step){
@@ -242,6 +239,11 @@ EmbeddingBuilderBase::EmbeddingBuilderBase(std::string &s) {
     std::cout << "EmbeddingBuilderBase" << std::endl;
     path_ = s;
 }
+
+double EmbeddingBuilderBase::unpackWeight(int64_t next) {
+    return 0;
+}
+
 
 
 //std::ifstream EmbeddingBuilderBase::source(std::string path) {

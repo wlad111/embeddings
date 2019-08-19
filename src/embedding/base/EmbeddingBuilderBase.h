@@ -22,7 +22,7 @@ class EmbeddingBuilderBase
 private:
     int minCount_ = 5;
 
-    typename Embedding<string>::WindowType window_type = Embedding<string>::WindowType::LINEAR;
+
 
     int iterations_ = 25;
     double step_ = 0.01;
@@ -78,6 +78,8 @@ protected:
 
     int windowRight = 15;
     int windowLeft = 15;
+
+
 public:
     EmbeddingBuilderBase(std::string &s);
     void window (Embedding<string>::WindowType type, int left, int right) override;

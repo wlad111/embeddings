@@ -16,7 +16,7 @@
 class CoocBasedBuilder
         : public EmbeddingBuilderBase {
 private:
-    const int32_t capacity = 50000000;
+    const int32_t capacity = 5'000'000;
 
     int32_t dense_count_ = 1000;
 
@@ -30,8 +30,10 @@ private:
 
     std::mutex mt;
     std::condition_variable cv;
-    int bufferSize = 1'000'000;
+    int bufferSize = 100'000'000;
     std::deque<std::string> buffer;
+    std::vector<std::vector<int64_t >> accumulators;
+
 
     void readWords (std::ifstream& reader);
     void sendWords();

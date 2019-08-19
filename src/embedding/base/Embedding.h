@@ -34,6 +34,7 @@ public:
         EXP
     };
 
+
     class Builder {
         //TODO add function file()
     public:
@@ -43,7 +44,6 @@ public:
         virtual void step (double step) = 0;
         virtual void build () = 0;
         virtual void window (WindowType type, int left, int right) = 0;
-
         virtual ~Builder();
     };
 
