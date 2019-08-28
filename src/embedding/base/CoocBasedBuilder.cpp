@@ -25,7 +25,10 @@ void CoocBasedBuilder::readWords(std::ifstream &reader) {
                 return;
             }
             words_count++;
-            int32_t idx = wordsIndex[normalize(word)];
+            int32_t idx = wordsIndex[normalize(word)]; //TODO there can be null idx, careful
+            if (idx == 0) {
+                std::cout << "wow" << std::endl;
+            }
             int32_t pos = pos_queue.size();
             int64_t out[windowRight + windowLeft];
             int32_t outIndex = 0;
@@ -82,9 +85,9 @@ void CoocBasedBuilder::sendWords() {
 }
 
 void CoocBasedBuilder::processWords(std::deque<std::string> &buf) {
-    //TODO doesn't compile, need std::bind
     //std::for_each(accumulators.begin(), accumulators.end(), &CoocBasedBuilder::merge);
-
+    auto func = std::bind(&CoocBasedBuilder::merge, this, std::placeholders::_1);
+    std::for_each(accumulators.begin(), accumulators.end(), func);
     for (auto acc : accumulators) {
         acc.clear();
     }
@@ -139,13 +142,12 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {
         //TODO это болванка, надо прикрутить тип окна и потом исправить эту строчку
         weights[i] = i > 126 ? -256 + i : i;
     }
-    std::vector<int64_t> prevRow;
-    std::vector<int64_t> updatedRow(wordsList.size(), 0);
+    std::vector<int64_t> prevRow{};
+    std::vector<int64_t> updatedRow{};
+    updatedRow.reserve(wordsList.size());
     int prevA = -1;
     int pos = 0; // insertion point
     int prevLength = 0;
-
-
     {
         for (int i = 0; i < size; i++) {
             int64_t next = acc[i];
@@ -153,7 +155,7 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {
             const int a = unpackA(next);
             const int b = unpackB(next);
             float weight = weights[unpackDist(next)];
-            while (++i < size && ((next = acc[i]) & 0xFFFFFFFFFFFFFF00L) == currentPairMasked) {
+            while ((++i < size) && (((next = acc[i]) & 0xFFFFFFFFFFFFFF00L) == currentPairMasked)) {
                 weight += weights[unpackDist(next)];
             }
             if (i < size) {
@@ -162,37 +164,40 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {
 
             if (a != prevA) {
                 if (prevA >= 0){
-                    std::vector<int64_t> longSeqRow = prevRow;
-                    updatedRow.insert(updatedRow.end(), longSeqRow.begin() + pos, longSeqRow.begin() + prevLength);
-                    std::vector<int64_t > result;
-                    if (updatedRow.size() <= longSeqRow.size()) {
-                        result = longSeqRow;
+                    updatedRow.insert(updatedRow.end(), prevRow.begin() + pos, prevRow.begin() + prevLength);
+                    //std::vector<int64_t > result;
+                   /* if (updatedRow.size() <= prevRow.size()) {
+                        //result = prevRow;
+                        prevRow.insert(prevRow.begin(), updatedRow.begin(), updatedRow.end());
                         result.insert(result.begin(), updatedRow.begin(), updatedRow.end());
                     }
                     else {
                         result.resize(updatedRow.size());
                         result.insert(result.begin(), updatedRow.begin(), updatedRow.end());
-                    }
-                    cooc_[prevA] = result; //TODO ask IK about LongSeq.build() (вроде как тут надо заинсертить longseqrow в updatedrow. переделать!
+                    }*/
+                    cooc_[prevA].insert(cooc_[prevA].begin(), updatedRow.begin(), updatedRow.end());
+                    //cooc_[prevA] = result; //TODO ask IK about LongSeq.build() (вроде как тут надо заинсертить longseqrow в updatedrow. переделать!
                     int prev[] = {-1};
                     int prevAFinal = prevA;
+                    //unlock rowLocks[prevA];
                 }
-                //unlock rowLocks[prevA];
                 prevA = a;
                 prevRow = cooc_[a];
                 prevLength = prevRow.size();
                 pos = 0;
+                updatedRow.resize(0);
             }
             //lock rowLocks[prevA];
 
+            //assert prevRow != null;
 
             int64_t  prevPacked;
             while (pos < prevLength) { // merging previous version of the cooc row with current data
                 prevPacked = prevRow[pos];
-                int32_t prevB = static_cast<int32_t >(prevPacked >> 32);
+                auto prevB = static_cast<int32_t >(prevPacked >> 32);
                 if (prevB >= b) {
                     if (prevB == b) {
-                        int32_t int_to_float = static_cast<int32_t >(prevPacked & 0xFFFFFFFFL);
+                        auto int_to_float = static_cast<int32_t >(prevPacked & 0xFFFFFFFFL);
                         weight += (*reinterpret_cast<float*>(&int_to_float));
                         pos++;
                     }
@@ -204,23 +209,30 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {
             }
             int64_t repacked = (static_cast<int64_t >(b) << 32) | *reinterpret_cast<int*>(&weight);
             updatedRow.push_back(repacked);
+            /*if (i >= 2800000 && i % 1000 == 0) {
+                std::cout << "wow" << std::endl;
+            }*/
+
         }
 
-        std::vector<int64_t >longSeqRow = prevRow;
-        updatedRow.insert(updatedRow.end(), longSeqRow.begin() + pos, longSeqRow.begin() + prevLength);
+        //std::vector<int64_t >longSeqRow = prevRow;
+        updatedRow.insert(updatedRow.end(), prevRow.begin() + pos, prevRow.begin() + prevLength);
         //        cooc.set(prevA, updatedRow.build(longSeqRow.data(), 0.2, 100));
-        std::vector<int64_t > result;
-        if (updatedRow.size() <= longSeqRow.size()) {
-            result = longSeqRow;
+        /*std::vector<int64_t > result;
+        if (updatedRow.size() <= prevRow.size()) {
+            //result = longSeqRow;
+            prevRow.insert(prevRow.begin(), updatedRow.begin(), updatedRow.end());
             result.insert(result.begin(), updatedRow.begin(), updatedRow.end());
         }
         else {
             result.resize(updatedRow.size());
             result.insert(result.begin(), updatedRow.begin(), updatedRow.end());
         }
-        cooc_[prevA] = result;
+        cooc_[prevA] = result;*/
+        cooc_[prevA].insert(cooc_[prevA].begin(), updatedRow.begin(), updatedRow.end());
     }
     //unlock rowLocks[prevA]
+    std::cout << "finished" << std::endl;
 }
 
 void CoocBasedBuilder::fit() {
