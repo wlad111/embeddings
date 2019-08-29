@@ -249,8 +249,8 @@ int32_t CoocBasedBuilder::index(std::string word) {
     return EmbeddingBuilderBase::index(word);
 }
 
-std::vector<int64_t> CoocBasedBuilder::cooc(size_t i) {
-    return std::vector<int64_t>();
+const std::vector<int64_t> &CoocBasedBuilder::cooc(size_t i) const {
+    return cooc_[i];
 }
 
 float CoocBasedBuilder::unpackWeight(std::vector<int64_t> &cooc, int32_t v) {

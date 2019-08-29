@@ -46,7 +46,7 @@ protected:
 
     int32_t index(std::string word);
 
-    std::vector<int64_t> cooc(size_t i);
+    const std::vector<int64_t> &cooc(size_t i) const;
 
 
     float unpackWeight(std::vector<int64_t > &cooc, int32_t v);

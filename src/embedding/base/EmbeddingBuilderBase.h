@@ -59,7 +59,7 @@ protected:
         std::vector<double> weights;
         std::vector<int64_t> counts;
     public:
-        ScoreCalculator(int dim);
+        explicit ScoreCalculator(int dim);
         void adjust(int i, int j, double weight, double value);
         double gloveScore();
         int64_t  count();
