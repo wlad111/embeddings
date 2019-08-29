@@ -32,8 +32,8 @@ void GloVeBuilder::fit() {
         biasLeft.set(i, initializeValue());
         biasRight.set(i, initializeValue());
         for (int j = 0; j < dim_; j++) {
-            leftVectors.set(i, j, initializeValue());
-            rightVectors.set(i, j, initializeValue());
+            leftVectors.set(j, i, initializeValue());
+            rightVectors.set(j, i, initializeValue());
         }
     }
 
@@ -41,8 +41,14 @@ void GloVeBuilder::fit() {
     Mx softMaxRight(rightVectors.ydim(), rightVectors.xdim());
     Vec softBiasLeft(biasLeft.dim());
     Vec softBiasRight(biasRight.dim());
-    VecTools::fill(1.0, softMaxLeft);
-    VecTools::fill(1.0, softMaxRight);
+   /* VecTools::fill(1.0, softMaxLeft);
+    VecTools::fill(1.0, softMaxRight);*/
+    for (int i = 0; i < softMaxLeft.ydim(); i++) {
+        for (int j = 0; j < softMaxLeft.xdim(); j++) {
+            softMaxLeft.set(j, i, 1.0);
+            softMaxRight.set(j, i, 1.0);
+        }
+    }
     VecTools::fill(1.0, softBiasLeft);
     VecTools::fill(1.0, softBiasRight);
 
@@ -55,6 +61,7 @@ void GloVeBuilder::fit() {
 
 
     for (int iter = 0; iter < T(); iter++) {
+        ScoreCalculator score_calculator(vocab_size);
         std::for_each(vocab_size_range.begin(), vocab_size_range.end(), [&](size_t i) mutable {
             Vec left(leftVectors.row(i)); //TODO check if it is correct vec by reference
             Vec softMaxL(softMaxLeft.row(i));
@@ -68,6 +75,7 @@ void GloVeBuilder::fit() {
                 double diff = biasLeft.get(i) + biasRight.get(j) + asum - log(X_ij);
                 double weight = weightingFunc(X_ij);
                 double fdiff = step() * diff * weight;
+                score_calculator.adjust(i, j, weight, 0.5 * weight * diff * diff);
                 for (int id = 0; id < dim_; id++) {
                     double dL = fdiff * right.get(id);
                     double dR = fdiff * left.get(id);
@@ -79,17 +87,18 @@ void GloVeBuilder::fit() {
                 biasLeft.set(i, biasLeft.get(i) - fdiff / sqrt(softBiasLeft.get(i)));
                 biasRight.set(j, biasRight.get(j) - fdiff / sqrt(softBiasRight.get(j)));
                 softBiasLeft.set(i, softBiasLeft.get(i) + fdiff * fdiff);
-                softBiasRight.set(j, biasLeft.get(j) + fdiff * fdiff);
+                softBiasRight.set(j, softBiasRight.get(j) + fdiff * fdiff);
             });
         });
-        std::cout << "Iteration " << iter << std::endl;
+        std::cout << "Iteration " << iter << ", score" << score_calculator.gloveScore() << std::endl;
     }
 
     std::unordered_map<std::string, Vec> mapping;
     for (int i = 0; i < dict().size(); i++) {
         std::string word = dict()[i];
 
-        mapping[word] += leftVectors.row(i) + rightVectors.row(i);
+        mapping.emplace(word, leftVectors.row(i) + rightVectors.row(i));
+        //mapping[word] = leftVectors.row(i) + rightVectors.row(i);
     }
 }
 

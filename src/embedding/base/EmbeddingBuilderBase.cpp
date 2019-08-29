@@ -259,7 +259,7 @@ EmbeddingBuilderBase::ScoreCalculator::ScoreCalculator(int dim){
 void EmbeddingBuilderBase::ScoreCalculator::adjust(int i, int j, double weight, double value) {
     weights[i] += weight;
     scores[i] += value;
-    counts[i] ++;
+    counts[i]++;
 }
 
 double EmbeddingBuilderBase::ScoreCalculator::gloveScore() {

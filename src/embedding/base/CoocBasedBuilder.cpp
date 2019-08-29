@@ -6,6 +6,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <cmath>
 
 //producer
 void CoocBasedBuilder::readWords(std::ifstream &reader) {
@@ -26,15 +27,9 @@ void CoocBasedBuilder::readWords(std::ifstream &reader) {
             }
             words_count++;
             int32_t idx = wordsIndex[normalize(word)]; //TODO there can be null idx, careful
-            if (idx == 0) {
-                std::cout << "wow" << std::endl;
-            }
             int32_t pos = pos_queue.size();
             int64_t out[windowRight + windowLeft];
             int32_t outIndex = 0;
-            /*if (words_count == 95768) {
-                std::cout << words_count << " words processed" << std::endl;
-            }*/
             for (int j = offset; j < pos; j++) {
                 int8_t distance = pos - j;
                 if (distance == 0) {
@@ -47,9 +42,6 @@ void CoocBasedBuilder::readWords(std::ifstream &reader) {
                     out[outIndex++] = pack(idx, pos_queue[j], -distance);
                 }
                 i++;
-                /*if (i % 100000 == 0) {
-                    std::cout << "Processed " << i << " words" << std::endl;
-                }*/
             }
             pos_queue.push_back(idx);
             if (pos_queue.size() > std::max(windowLeft, windowRight)) {
@@ -139,8 +131,8 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {
     const int size = acc.size();
     float weights[256];
     for (int i = 0; i < 256; i++) {
-        //TODO это болванка, надо прикрутить тип окна и потом исправить эту строчку
-        weights[i] = i > 126 ? -256 + i : i;
+        int d = i > 126 ? -256 + i : i;
+        weights[i] = d == 0 ? 0 : 1./std::abs(d); //TODO hard-coded linear window, fix later
     }
     std::vector<int64_t> prevRow{};
     std::vector<int64_t> updatedRow{};
