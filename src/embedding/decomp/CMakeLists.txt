@@ -6,7 +6,7 @@ add_library(decomp
         MultiDecompBuilder.h
         MultiDecompBuilder.cpp)
 
-target_link_libraries(decomp core util base)
+target_link_libraries(decomp base)
 
 target_include_directories(decomp INTERFACE
         PUBLIC $<INSTALL_INTERFACE:include>

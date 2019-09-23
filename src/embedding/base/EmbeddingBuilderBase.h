@@ -6,42 +6,40 @@
 #define EMBEDDINGS_EMBEDDINGBUILDERBASE_H
 
 #include "Embedding.h"
+#include "EmbeddingImpl.h"
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include <iostream>
 #include <fstream>
+//#include <core/vec.h>
 
 
 
 //TODO add path field, use std::filesystem::path
 //TODO add destructor
 class EmbeddingBuilderBase
-        : public Embedding<string>::Builder {
+: public Embedding<std::string>::Builder {
 
 private:
     int minCount_ = 5;
-
-
-
     int iterations_ = 25;
     double step_ = 0.01;
     bool dictReady = false;
 protected:
-    std::vector<string> wordsList;
-    //TODO initialize wordsIndex
-    std::unordered_map<string, int> wordsIndex;
-
+    std::vector<std::string> wordsList;
+    std::unordered_map<std::string, int> wordsIndex;
+    //std::unordered_map<string, Vec> mapping;
     std::string path_;
 
     virtual void fit() = 0;
 
-    std::vector<string> dict();
-    int index(string word);
+    std::vector<std::string> dict();
+    int index(std::string word);
     int T();
     double step();
     int minCount();
-    Embedding<string>::WindowType wtype();
+    Embedding<std::string>::WindowType wtype();
     int wleft();
     int wright();
 
@@ -82,14 +80,16 @@ protected:
 
 public:
     EmbeddingBuilderBase(std::string &s);
-    void window (Embedding<string>::WindowType type, int left, int right) override;
+    void window (Embedding<std::string>::WindowType type, int left, int right) override;
     void step (double step) override;
     void iterations (int count) override;
     void minWordCount (int count) override;
     void build() override;
     void file(const std::string &path) override;
     //TODO add other functions & implement them
-
+    //const std::unordered_map<string, Vec> &get_mapping() const;
+    void write_mapping(std::string path);
+    std::vector<std::string> closest_words_except(std::string word, int top, std::vector<std::string> except_words);
 };
 
 

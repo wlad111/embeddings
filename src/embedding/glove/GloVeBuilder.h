@@ -16,7 +16,7 @@ class GloVeBuilder :
 public:
     void alpha(double alpha);
 
-    GloVeBuilder(string &dictPath);
+    GloVeBuilder(std::string &dictPath);
 
     void x_max(double x_max);
     void dim(int dim);

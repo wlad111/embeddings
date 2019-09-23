@@ -6,16 +6,14 @@ project(embeddings)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(
-        -lpthread
-)
-
 find_package(Torch REQUIRED)
+find_package(TBB REQUIRED tbb)
 
-add_subdirectory(extern/ml_lib/)
+#add_subdirectory(extern/ml_lib/)
 
 add_library(embeddings SHARED library.cpp library.h)
-target_link_libraries(embeddings "${TORCH_LIBRARIES}" core util)
+target_link_libraries(embeddings "${TORCH_LIBRARIES}")
+target_link_libraries(embeddings "${TBB_IMPORTED_TARGETS}")
 
 add_subdirectory(src)
 

@@ -7,17 +7,17 @@
 #define EMBEDDINGS_EMBEDDING_H
 
 #include <functional>
-#include <core/vec.h>
+//#include <core/vec.h>
 #include <bits/std_function.h>
 #include <cmath>
 
 
 template <class T>
 class Embedding:
-        public std::function<Vec(T)>{
+        public std::function<void(T)>{
 public:
 
-    virtual Vec operator()(T arg) const = 0;
+    virtual void operator()(T arg) const = 0;
 
     virtual ~Embedding();
 

@@ -6,7 +6,7 @@
 #define EMBEDDINGS_DECOMPBUILDER_H
 
 
-#include <core/vec.h>
+//#include <core/vec.h>
 #include <base/Embedding.h>
 
 class DecompBuilder {

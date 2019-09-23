@@ -9,13 +9,14 @@
 #include <sstream>
 #include <chrono>
 #include <ctime>
+#include <unordered_set>
 
 
-std::vector<string> EmbeddingBuilderBase::dict() {
+std::vector<std::string> EmbeddingBuilderBase::dict() {
     return wordsList;
 }
 
-int EmbeddingBuilderBase::index(string word) {
+int EmbeddingBuilderBase::index(std::string word) {
     return wordsIndex[word];
 }
 
@@ -125,7 +126,7 @@ std::string EmbeddingBuilderBase::normalize(std::string &word) {
     return word;
 }
 
-void EmbeddingBuilderBase::window(Embedding<string>::WindowType type, int left, int right) {
+void EmbeddingBuilderBase::window(Embedding<std::string>::WindowType type, int left, int right) {
     windowLeft = left;
     windowRight = right;
 }
@@ -179,8 +180,7 @@ int32_t EmbeddingBuilderBase::unpackDist(int64_t next) {
 std::vector<int64_t> EmbeddingBuilderBase::positionsStream() {
     std::cout << "positions stream" << std::endl;
     std::ifstream source(path_);
-    //std::string line;
-    //std::string newLine = "777newline777";
+
     int64_t nLine = 0;
 
     std::vector<int32_t> pos_queue;
@@ -244,11 +244,45 @@ double EmbeddingBuilderBase::unpackWeight(int64_t next) {
     return 0;
 }
 
+/*const std::unordered_map<string, Vec> &EmbeddingBuilderBase::get_mapping() const {
+    return mapping;
+}*/
 
+/*void EmbeddingBuilderBase::write_mapping(std::string path) {
+    std::ofstream mapfs(path);
+    for (auto entry : mapping) {
+        mapfs << entry.first;
+        for (int i = 0; i < entry.second.dim(); i++) {
+            mapfs << "," << entry.second.get(i);
+        }
+        mapfs << std::endl;
+    }
+}*/
 
-//std::ifstream EmbeddingBuilderBase::source(std::string path) {
-//
-//}
+//std::vector<std::string>
+/*EmbeddingBuilderBase::closest_words_except(std::string word, int top, std::vector<std::string> except_words) {
+    std::unordered_set<int> except_ids;
+    std::vector<double> order;
+    std::vector<std::pair<double, int >> dist_id;
+    for (auto w: except_words) {
+        except_ids.insert(wordsIndex[w]);
+    }
+    for (int i = 0; i < wordsList.size(); i++) {
+        if (except_ids.find(i) != except_ids.end()) {
+            dist_id.push_back({MAXFLOAT, i});
+        }
+        else {
+            dist_id.push_back({VecTools::distanceL2(mapping[word], mapping[wordsList[i]]), i});
+        }
+    }
+    std::sort(dist_id.begin(), dist_id.end());
+    std::vector<string> result;
+    for (int i = 0; i < top; i++) {
+        result.push_back(wordsList[dist_id[i].second]);
+    }
+    return result;
+}*/
+
 
 EmbeddingBuilderBase::ScoreCalculator::ScoreCalculator(int dim){
     counts.resize(dim);
@@ -281,3 +315,4 @@ int64_t EmbeddingBuilderBase::ScoreCalculator::count() {
     }
     return sum_counts;
 }
+

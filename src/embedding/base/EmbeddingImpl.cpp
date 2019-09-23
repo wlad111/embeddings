@@ -5,10 +5,10 @@
 //TODO define write() and read()
 
 #include "EmbeddingImpl.h"
-#include <vec_tools/distance.h>
+//#include <vec_tools/distance.h>
 
-template <class T>
-EmbeddingImpl<T>::EmbeddingImpl(std::unordered_map<T, Vec> &map) {
+//template <class T>
+/*EmbeddingImpl<T>::EmbeddingImpl(std::unordered_map<T, Vec> &map) {
     mapping = map;
 
     for(auto kv : map) {
@@ -18,9 +18,9 @@ EmbeddingImpl<T>::EmbeddingImpl(std::unordered_map<T, Vec> &map) {
     for (size_t i = 0; i < vocab.size(); i++) {
         invVocab[vocab[i]] = i;
     }
-}
+}*/
 
-template<class T>
+/*template<class T>
 bool EmbeddingImpl<T>::inVocab(T obj) {
     for (auto entry:vocab) {
         if (entry == obj) {
@@ -28,19 +28,21 @@ bool EmbeddingImpl<T>::inVocab(T obj) {
         }
     }
     return false;
-}
+}*/
 
-template<class T>
+//template<class T>
+/*
 int EmbeddingImpl<T>::vocabSize() {
     return vocab.size();
 }
+*/
 
-template<class T>
-int EmbeddingImpl<T>::getIndex(T obj) {
+//template<class T>
+/*int EmbeddingImpl<T>::getIndex(T obj) {
     return invVocab[obj];
-}
+}*/
 
-template<class T>
+/*template<class T>
 T EmbeddingImpl<T>::getObj(int i) {
     return vocab[i];
 }
@@ -58,7 +60,7 @@ double EmbeddingImpl<T>::distance(T a, T b) {
 template<class T>
 Vec EmbeddingImpl<T>::operator()(T t) {
     return mapping[t];
-}
+}*/
 
 
 

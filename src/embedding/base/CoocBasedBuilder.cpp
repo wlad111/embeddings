@@ -18,7 +18,7 @@ void CoocBasedBuilder::readWords(std::ifstream &reader) {
         int32_t offset = 0;
         std::vector<int64_t> res;
         size_t acc_idx = 0;
-        accumulators.resize(10);
+        accumulators.resize(accs_count);
         int i = 0;
         int words_count = 0;
         for (reader >> word;  !reader.eof() && i < bufferSize; reader >> word) {
@@ -54,6 +54,9 @@ void CoocBasedBuilder::readWords(std::ifstream &reader) {
             for (int k = 0; k < outIndex; k++) {
                 if (accumulators[acc_idx].size() > capacity) {
                     acc_idx++;
+                    if (acc_idx > accs_count - 1) {
+                        return;
+                    }
                 }
                 accumulators[acc_idx].push_back(out[k]);
             }
@@ -126,7 +129,7 @@ void CoocBasedBuilder::acquireCoocurrences() {
     }
 }
 
-void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {
+void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {//TODO memory bug
     std::sort(acc.begin(), acc.end());
     const int size = acc.size();
     float weights[256];
@@ -157,18 +160,12 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {
             if (a != prevA) {
                 if (prevA >= 0){
                     updatedRow.insert(updatedRow.end(), prevRow.begin() + pos, prevRow.begin() + prevLength);
-                    //std::vector<int64_t > result;
-                   /* if (updatedRow.size() <= prevRow.size()) {
-                        //result = prevRow;
-                        prevRow.insert(prevRow.begin(), updatedRow.begin(), updatedRow.end());
-                        result.insert(result.begin(), updatedRow.begin(), updatedRow.end());
+
+                    if (cooc_[prevA].size() < updatedRow.size()) {
+                        cooc_[prevA].resize(updatedRow.size());
                     }
-                    else {
-                        result.resize(updatedRow.size());
-                        result.insert(result.begin(), updatedRow.begin(), updatedRow.end());
-                    }*/
-                    cooc_[prevA].insert(cooc_[prevA].begin(), updatedRow.begin(), updatedRow.end());
-                    //cooc_[prevA] = result; //TODO ask IK about LongSeq.build() (вроде как тут надо заинсертить longseqrow в updatedrow. переделать!
+                    std::copy(updatedRow.begin(), updatedRow.end(), cooc_[prevA].begin());
+                    //cooc_[prevA] = result;
                     int prev[] = {-1};
                     int prevAFinal = prevA;
                     //unlock rowLocks[prevA];
@@ -181,7 +178,6 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {
             }
             //lock rowLocks[prevA];
 
-            //assert prevRow != null;
 
             int64_t  prevPacked;
             while (pos < prevLength) { // merging previous version of the cooc row with current data
@@ -201,30 +197,19 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {
             }
             int64_t repacked = (static_cast<int64_t >(b) << 32) | *reinterpret_cast<int*>(&weight);
             updatedRow.push_back(repacked);
-            /*if (i >= 2800000 && i % 1000 == 0) {
-                std::cout << "wow" << std::endl;
-            }*/
-
         }
 
-        //std::vector<int64_t >longSeqRow = prevRow;
         updatedRow.insert(updatedRow.end(), prevRow.begin() + pos, prevRow.begin() + prevLength);
-        //        cooc.set(prevA, updatedRow.build(longSeqRow.data(), 0.2, 100));
-        /*std::vector<int64_t > result;
-        if (updatedRow.size() <= prevRow.size()) {
-            //result = longSeqRow;
-            prevRow.insert(prevRow.begin(), updatedRow.begin(), updatedRow.end());
-            result.insert(result.begin(), updatedRow.begin(), updatedRow.end());
+
+        if (prevA != -1) {
+            //cooc_[prevA].insert(cooc_[prevA].begin(), updatedRow.begin(), updatedRow.end());
+            if (cooc_[prevA].size() < updatedRow.size()) {
+                cooc_[prevA].resize(updatedRow.size());
+            }
+            std::copy(updatedRow.begin(), updatedRow.end(), cooc_[prevA].begin());
         }
-        else {
-            result.resize(updatedRow.size());
-            result.insert(result.begin(), updatedRow.begin(), updatedRow.end());
-        }
-        cooc_[prevA] = result;*/
-        cooc_[prevA].insert(cooc_[prevA].begin(), updatedRow.begin(), updatedRow.end());
     }
     //unlock rowLocks[prevA]
-    std::cout << "finished" << std::endl;
 }
 
 void CoocBasedBuilder::fit() {
@@ -251,19 +236,12 @@ float CoocBasedBuilder::unpackWeight(std::vector<int64_t> &cooc, int32_t v) {
 
 
 void CoocBasedBuilder::build() {
-
+    
 }
 
 CoocBasedBuilder::CoocBasedBuilder(std::string &dict_path) : EmbeddingBuilderBase(dict_path) {
     std::cout << "CoocBasedBuilder" << std::endl;
 }
 
-
-
-
-//std::vector<uint64_t> CoocBasedBuilder::positionsStream() {
-    std::vector<uint64_t> coocStream;
-
-//}
 
 

@@ -9,6 +9,7 @@
 #include <vector>
 #include <condition_variable>
 #include <mutex>
+#include <deque>
 
 //TODO maybe add logger
 
@@ -17,6 +18,7 @@ class CoocBasedBuilder
         : public EmbeddingBuilderBase {
 private:
     const int32_t capacity = 5'000'000;
+    const int32_t accs_count = 10;
 
     int32_t dense_count_ = 1000;
 
@@ -28,7 +30,7 @@ private:
 
     void merge(std::vector<int64_t> &acc);
 
-    std::mutex mt;
+    //std::mutex mt;
     std::condition_variable cv;
     int bufferSize = 100'000'000;
     std::deque<std::string> buffer;
@@ -52,7 +54,7 @@ protected:
     float unpackWeight(std::vector<int64_t > &cooc, int32_t v);
 
 public:
-    void build() override;
+    void build();
     void fit() override;
     explicit CoocBasedBuilder(std::string &dict_path);
 };
