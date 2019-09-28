@@ -15,6 +15,11 @@ Embedding<T>::~Embedding() {
 }
 
 template<>
+Embedding<std::string>::~Embedding() {
+
+}
+
+template<>
 Embedding<std::string>::Builder::~Builder() {
 
 }

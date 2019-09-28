@@ -126,34 +126,51 @@ std::string EmbeddingBuilderBase::normalize(std::string &word) {
     return word;
 }
 
-void EmbeddingBuilderBase::window(Embedding<std::string>::WindowType type, int left, int right) {
+/*
+std::unique_ptr<Embedding<std::string>::Builder> EmbeddingBuilderBase::window(Embedding<std::string>::WindowType type, int left, int right) {
     windowLeft = left;
     windowRight = right;
 }
+*/
 
-void EmbeddingBuilderBase::step(double step){
+std::unique_ptr<Embedding<std::string>::Builder> EmbeddingBuilderBase::step(double step){
     step_ = step;
+    std::unique_ptr<Embedding<std::string>::Builder> result(this);
+    return result;
 }
 
-void EmbeddingBuilderBase::iterations(int count) {
+std::unique_ptr<Embedding<std::string>::Builder> EmbeddingBuilderBase::iterations(int count) {
     iterations_ = count;
+    std::unique_ptr<Embedding<std::string>::Builder> result(this);
+    return result;
 }
 
-void EmbeddingBuilderBase::minWordCount(int count) {
+std::unique_ptr<Embedding<std::string>::Builder> EmbeddingBuilderBase::minWordCount(int count) {
     minCount_ = count;
+    std::unique_ptr<Embedding<std::string>::Builder> result(this);
+    return result;
 }
 
-void EmbeddingBuilderBase::build() {
+std::unique_ptr<Embedding<std::string>> EmbeddingBuilderBase::build() {
     std::cout << "==== Dictionary phase ====" << std::endl;
     auto start = std::chrono::system_clock::now();
     acquireDictionary();
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
-    std::cout << "==== " << elapsed_seconds.count() << "s ====" << std::endl;
+    std::cout << "==== Generated dictionary for " << elapsed_seconds.count() << "s ====" << std::endl;
+    std::cout << "==== Training phase ====" << std::endl;
+    start = std::chrono::system_clock::now();
+    std::unique_ptr<Embedding<std::string>> result = fit();
+    end = std::chrono::system_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "==== Fitted for " << elapsed_seconds.count() << "s ====" << std::endl;
+    return result;
 }
 
-void EmbeddingBuilderBase::file(const std::string &path) {
+std::unique_ptr<Embedding<std::string>::Builder> EmbeddingBuilderBase::file(const std::string &path) {
     path_ = path;
+    std::unique_ptr<Embedding<std::string>::Builder> result(this);
+    return result;
 }
 
 int64_t EmbeddingBuilderBase::pack(int64_t a, int64_t b, int8_t dist) {
@@ -259,8 +276,8 @@ double EmbeddingBuilderBase::unpackWeight(int64_t next) {
     }
 }*/
 
-//std::vector<std::string>
-/*EmbeddingBuilderBase::closest_words_except(std::string word, int top, std::vector<std::string> except_words) {
+std::vector<std::string>
+EmbeddingBuilderBase::closest_words_except(std::string word, int top, std::vector<std::string> except_words) {
     std::unordered_set<int> except_ids;
     std::vector<double> order;
     std::vector<std::pair<double, int >> dist_id;
@@ -272,16 +289,20 @@ double EmbeddingBuilderBase::unpackWeight(int64_t next) {
             dist_id.push_back({MAXFLOAT, i});
         }
         else {
-            dist_id.push_back({VecTools::distanceL2(mapping[word], mapping[wordsList[i]]), i});
+            auto dif = mapping[word] - mapping[wordsList[i]];
+            auto difnorm = dif.norm(2);
+            auto difnorm_a = difnorm.data<float>();
+            dist_id.push_back({difnorm_a[0], i});
+
         }
     }
     std::sort(dist_id.begin(), dist_id.end());
-    std::vector<string> result;
+    std::vector<std::string> result;
     for (int i = 0; i < top; i++) {
         result.push_back(wordsList[dist_id[i].second]);
     }
     return result;
-}*/
+}
 
 
 EmbeddingBuilderBase::ScoreCalculator::ScoreCalculator(int dim){

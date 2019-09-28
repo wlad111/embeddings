@@ -6,4 +6,5 @@ add_library(base
         EmbeddingImpl.cpp
         EmbeddingImpl.h EmbeddingBuilderBase.cpp EmbeddingBuilderBase.h CoocBasedBuilder.cpp CoocBasedBuilder.h)
 
-target_link_libraries(base)
+target_link_libraries(base "${TBB_IMPORTED_TARGETS}" "${TORCH_LIBRARIES}")
+

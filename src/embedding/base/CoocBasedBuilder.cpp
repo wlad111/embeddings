@@ -211,11 +211,8 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {//TODO memory bug
     }
     //unlock rowLocks[prevA]
 }
+std::unique_ptr<Embedding<std::string>> CoocBasedBuilder::fit() {
 
-void CoocBasedBuilder::fit() {
-    std::cout << "fit" << std::endl;
-    acquireDictionary();
-    acquireCoocurrences();
 }
 
 std::vector<std::string> CoocBasedBuilder::dict() {
@@ -226,7 +223,7 @@ int32_t CoocBasedBuilder::index(std::string word) {
     return EmbeddingBuilderBase::index(word);
 }
 
-const std::vector<int64_t> &CoocBasedBuilder::cooc(size_t i) const {
+const std::vector<int64_t> & CoocBasedBuilder::cooc(size_t i) const {
     return cooc_[i];
 }
 
@@ -235,12 +232,34 @@ float CoocBasedBuilder::unpackWeight(std::vector<int64_t> &cooc, int32_t v) {
 }
 
 
-void CoocBasedBuilder::build() {
-    
+std::unique_ptr<Embedding<std::string>> CoocBasedBuilder::build() {
+    std::cout << "==== Dictionary phase ====" << std::endl;
+    auto start = std::chrono::system_clock::now();
+    acquireDictionary();
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end-start;
+    std::cout << "==== Generated dictionary for " << elapsed_seconds.count() << "s ====" << std::endl;
+    std::cout << "==== Cooccurence phase ====" << std::endl;
+    start = std::chrono::system_clock::now();
+    acquireCoocurrences();
+    end = std::chrono::system_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "=== Generated Cooccurences for " << elapsed_seconds.count() << "s " << std::endl;
+    std::cout << "==== Training phase ====" << std::endl;
+    start = std::chrono::system_clock::now();
+    std::unique_ptr<Embedding<std::string>> result = fit();
+    end = std::chrono::system_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "==== Fitted for " << elapsed_seconds.count() << "s ====" << std::endl;
+    return result;
 }
 
 CoocBasedBuilder::CoocBasedBuilder(std::string &dict_path) : EmbeddingBuilderBase(dict_path) {
     std::cout << "CoocBasedBuilder" << std::endl;
+}
+
+CoocBasedBuilder::~CoocBasedBuilder() {
+
 }
 
 

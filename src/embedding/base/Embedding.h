@@ -6,53 +6,29 @@
 #ifndef EMBEDDINGS_EMBEDDING_H
 #define EMBEDDINGS_EMBEDDING_H
 
-#include <functional>
-//#include <core/vec.h>
-#include <bits/std_function.h>
 #include <cmath>
+#include <torch/torch.h>
+#include <memory>
 
 
 template <class T>
-class Embedding:
-        public std::function<void(T)>{
+class Embedding {
 public:
 
-    virtual void operator()(T arg) const = 0;
+    virtual torch::Tensor & operator()(T arg) = 0;
 
     virtual ~Embedding();
 
-    enum class Type {
-        GLOVE,
-        DECOMP,
-        MULTI_DECOMP,
-        KMEANS_SKIP
-    };
-
-    enum class WindowType {
-        LINEAR,
-        FIXED,
-        EXP
-    };
-
-
     class Builder {
-        //TODO add function file()
     public:
-        virtual void file(const std::string &path) = 0;
-        virtual void minWordCount (int count) = 0;
-        virtual void iterations (int count) = 0;
-        virtual void step (double step) = 0;
-        virtual void build () = 0;
-        virtual void window (WindowType type, int left, int right) = 0;
+        virtual std::unique_ptr<Builder> file(const std::string &path) = 0;
+        virtual std::unique_ptr<Builder> minWordCount (int count) = 0;
+        virtual std::unique_ptr<Builder> iterations (int count) = 0;
+        virtual std::unique_ptr<Builder> step (double step) = 0;
+        virtual std::unique_ptr<Embedding<T>> build () = 0;
+        //virtual void window (WindowType type, int left, int right) = 0;
         virtual ~Builder();
     };
-
-
-
-
-
-
-
 
 private:
 };

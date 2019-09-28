@@ -7,6 +7,7 @@
 
 
 #include <base/CoocBasedBuilder.h>
+#include <base/EmbeddingImpl.h>
 #include <random>
 
 
@@ -21,9 +22,9 @@ public:
     void x_max(double x_max);
     void dim(int dim);
 
-    void fit () override;
-
 protected:
+    std::unique_ptr<Embedding<std::string>> fit () override;
+
 private:
     double x_max_ = 10;
     double alpha_ = 0.75;

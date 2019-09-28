@@ -5,10 +5,8 @@
 //TODO define write() and read()
 
 #include "EmbeddingImpl.h"
-//#include <vec_tools/distance.h>
 
-//template <class T>
-/*EmbeddingImpl<T>::EmbeddingImpl(std::unordered_map<T, Vec> &map) {
+EmbeddingImpl::EmbeddingImpl(std::unordered_map<std::string, torch::Tensor> & map) {
     mapping = map;
 
     for(auto kv : map) {
@@ -18,7 +16,15 @@
     for (size_t i = 0; i < vocab.size(); i++) {
         invVocab[vocab[i]] = i;
     }
-}*/
+}
+
+torch::Tensor & EmbeddingImpl::operator()(std::string arg) {
+    return mapping[arg];
+}
+
+
+
+
 
 /*template<class T>
 bool EmbeddingImpl<T>::inVocab(T obj) {

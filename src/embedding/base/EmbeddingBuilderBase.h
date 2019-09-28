@@ -12,39 +12,47 @@
 #include <unordered_map>
 #include <iostream>
 #include <fstream>
+#include <torch/torch.h>
 //#include <core/vec.h>
 
 
 
 //TODO add path field, use std::filesystem::path
-//TODO add destructor
 class EmbeddingBuilderBase
 : public Embedding<std::string>::Builder {
 
-private:
-    int minCount_ = 5;
-    int iterations_ = 25;
-    double step_ = 0.01;
-    bool dictReady = false;
+public:
+    EmbeddingBuilderBase(std::string &s);
+    //void window (Embedding<std::string>::WindowType type, int left, int right) override;
+    std::unique_ptr<Builder> step (double step) override;
+    std::unique_ptr<Builder> iterations (int count) override;
+    std::unique_ptr<Builder> minWordCount (int count) override;
+    std::unique_ptr<Embedding<std::string>> build() override;
+    std::unique_ptr<Builder> file(const std::string &path) override;
+    //TODO add other functions & implement them
+    //const std::unordered_map<string, Vec> &get_mapping() const;
+    void write_mapping(std::string path);
+    std::vector<std::string> closest_words_except(std::string word, int top, std::vector<std::string> except_words);
+
+
 protected:
     std::vector<std::string> wordsList;
     std::unordered_map<std::string, int> wordsIndex;
-    //std::unordered_map<string, Vec> mapping;
+    std::unordered_map<std::string, torch::Tensor> mapping;
     std::string path_;
 
-    virtual void fit() = 0;
+    virtual std::unique_ptr<Embedding<std::string>> fit() = 0;
 
     std::vector<std::string> dict();
     int index(std::string word);
     int T();
     double step();
     int minCount();
-    Embedding<std::string>::WindowType wtype();
+    //Embedding<std::string>::WindowType wtype();
     int wleft();
     int wright();
 
 
-    //TODO files processing
     void acquireDictionary();
     std::string normalize(std::string &word);
     bool anyLetter(std::string &word);
@@ -65,7 +73,6 @@ protected:
 
     int64_t pack(int64_t a, int64_t b, int8_t dist);
 
-    //TODO check all packing and unpacking functions
     int32_t unpackA(int64_t next);
     int32_t unpackB(int64_t next);
 
@@ -77,19 +84,12 @@ protected:
     int windowRight = 15;
     int windowLeft = 15;
 
+private:
+    int minCount_ = 1;
+    int iterations_ = 25;
+    double step_ = 0.01;
+    bool dictReady = false;
 
-public:
-    EmbeddingBuilderBase(std::string &s);
-    void window (Embedding<std::string>::WindowType type, int left, int right) override;
-    void step (double step) override;
-    void iterations (int count) override;
-    void minWordCount (int count) override;
-    void build() override;
-    void file(const std::string &path) override;
-    //TODO add other functions & implement them
-    //const std::unordered_map<string, Vec> &get_mapping() const;
-    void write_mapping(std::string path);
-    std::vector<std::string> closest_words_except(std::string word, int top, std::vector<std::string> except_words);
 };
 
 

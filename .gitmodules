@@ -1,3 +1,0 @@
-[submodule "extern/ml_lib"]
-	path = extern/ml_lib
-	url = https://github.com/Noxoomo/ml_lib.git

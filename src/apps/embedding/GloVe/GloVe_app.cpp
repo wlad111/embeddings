@@ -4,12 +4,12 @@
 
 #include <iostream>
 #include <glove/GloVeBuilder.h>
+#include <base/EmbeddingImpl.h>
 
 int main() {
     std::string dict_path("text8");
-    GloVeBuilder test(dict_path);
-    test.fit();
-    //test.write_mapping("mapping.txt");
+    std::unique_ptr<Embedding<std::string>::Builder> glove(new GloVeBuilder(dict_path));
+    std::unique_ptr<Embedding<std::string>> impl = glove->build();
 
     std::vector<std::string> exceptions = {"the", "a", "and", "of", "to", "but",
                                       "so", "as", "now","him"};
@@ -18,11 +18,11 @@ int main() {
     /*while (true) {
         std::cout << "Enter word " << std::endl;
         std::cin >> w;
-        auto words = test.closest_words_except(w, 7, exceptions);
+        auto words = glove->closest_words_except(w, 7, exceptions);
         for (auto entry : words) {
             std::cout << entry << std::endl;
-        }*/
-    //}
+        }
+    }*/
     //std::cout << dict_path << std::endl;
     return 0;
 }

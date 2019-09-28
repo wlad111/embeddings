@@ -20,9 +20,7 @@ void GloVeBuilder::dim(int dim) {
     dim_ = dim;
 }
 
-void GloVeBuilder::fit() {
-    std::cout << "Started training " << std::endl;
-    CoocBasedBuilder::fit();
+std::unique_ptr<Embedding<std::string>> GloVeBuilder::fit() {
     auto start_training = std::chrono::steady_clock::now();
     int vocab_size = dict().size();
     torch::Tensor leftVectors = torch::rand({dim_, vocab_size});
@@ -76,10 +74,7 @@ void GloVeBuilder::fit() {
                 int j = packed >> 32;
                 auto int_to_float = static_cast<int32_t >(packed& 0xFFFFFFFFL);
                 float X_ij = *reinterpret_cast<float*>(&int_to_float);
-                //torch::Tensor right = rightVectors[j];
-                //torch::Tensor softMaxR = softmaxRight[j];
-                //double asum = VecTools::dotProduct(left, right);
-                //double asum = torch::dot(leftVectors[i], rightVectors[j]);
+
                 double asum = 0;
                 for (int k = 0; k < dim_; k++) {
                    asum += leftVectors_a[k][i]*rightVectors_a[k][j];
@@ -96,13 +91,9 @@ void GloVeBuilder::fit() {
                     softMaxLeft_a[id][i] += dL * dL/*softMaxL.set(id, softMaxL.get(id) + dL * dL)*/;
                     softMaxRight_a[id][j] += dR * dR/*softMaxR.set(id, softMaxR.get(id) + dR * dR)*/;
                 }
-                //biasLeft.set(i, biasLeft.get(i) - fdiff / sqrt(softBiasLeft.get(i)));
                 biasLeft_a[i] -= fdiff / sqrt(softBiasLeft_a[i]);
-                //biasRight.set(j, biasRight.get(j) - fdiff / sqrt(softBiasRight.get(j)));
                 biasRight_a[j] -= fdiff / sqrt(softBiasRight_a[j]);
-                //softBiasLeft.set(i, softBiasLeft.get(i) + fdiff * fdiff);
                 softBiasLeft_a[i] += fdiff * fdiff;
-                //softBiasRight.set(j, softBiasRight.get(j) + fdiff * fdiff);
                 softBiasRight_a[j] += fdiff * fdiff;
             });
         });
@@ -117,14 +108,19 @@ void GloVeBuilder::fit() {
 
     auto end_training = std::chrono::steady_clock::now();
     int elapsed_tr = std::chrono::duration_cast<std::chrono::seconds>(end_training - start_training).count();
-    std::cout << "Trained vectors for " << elapsed_tr << " sec " << std::endl;
-    //std::unordered_map<std::string, Vec> mapping;
-    /*for (int i = 0; i < dict().size(); i++) {
+    //std::cout << "Trained vectors for " << elapsed_tr << " sec " << std::endl;
+    //std::unordered_map<std::string, torch::Tensor> mapping;
+
+    auto leftVectors_t = leftVectors.t();
+    auto rightVectors_t = rightVectors.t();
+
+    for (int i = 0; i < dict().size(); i++) {
         std::string word = dict()[i];
 
-        mapping.emplace(word, leftVectors.row(i) + rightVectors.row(i));
-        //mapping[word] = leftVectors.row(i) + rightVectors.row(i);
-    }*/
+        mapping.emplace(word, leftVectors_t[i] + rightVectors_t[i]);
+    }
+    std::unique_ptr<Embedding<std::string>> result(new EmbeddingImpl(mapping));
+    return result;
 }
 
 double GloVeBuilder::weightingFunc(double x) {

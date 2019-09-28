@@ -16,6 +16,12 @@
 
 class CoocBasedBuilder
         : public EmbeddingBuilderBase {
+
+public:
+    std::unique_ptr<Embedding<std::string>> build();
+    explicit CoocBasedBuilder(std::string &dict_path);
+
+    virtual ~CoocBasedBuilder();
 private:
     const int32_t capacity = 5'000'000;
     const int32_t accs_count = 10;
@@ -50,13 +56,11 @@ protected:
 
     const std::vector<int64_t> &cooc(size_t i) const;
 
+    virtual std::unique_ptr<Embedding<std::string>> fit() override;
 
     float unpackWeight(std::vector<int64_t > &cooc, int32_t v);
 
-public:
-    void build();
-    void fit() override;
-    explicit CoocBasedBuilder(std::string &dict_path);
+
 };
 
 
