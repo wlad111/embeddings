@@ -28,7 +28,7 @@ protected:
 private:
     double x_max_ = 10;
     double alpha_ = 0.75;
-    int dim_ = 1024;
+    int dim_ = 64;
 
     double weightingFunc(double x);
 

@@ -89,14 +89,14 @@ void CoocBasedBuilder::processWords(std::deque<std::string> &buf) {
     accumulators.clear();
 }
 
-void CoocBasedBuilder::acquireCoocurrences() {//TODO make tokens instead of vector<vector<int>>
+void CoocBasedBuilder::acquireCoocurrences() {
     if (!coocReady) {
         std::cout << "Generating cooccurences for " << path_ << std::endl;
 
 
 
         auto start = std::chrono::steady_clock::now();
-        cooc_.resize(wordsList.size());
+        cooc_1.resize(wordsList.size());
 
 
         std::cout << "Streaming words from corpus " << std::endl;
@@ -104,14 +104,14 @@ void CoocBasedBuilder::acquireCoocurrences() {//TODO make tokens instead of vect
 
 
 
-       // std::vector<std::lock_guard<std::mutex>> rowLocks;
+        // std::vector<std::lock_guard<std::mutex>> rowLocks;
 //
 
 
-    /*   std::thread t1(&CoocBasedBuilder::readWords, this, std::ref(source));
-       std::thread t2(&CoocBasedBuilder::sendWords, this);
-       t1.join();
-       t2.join();*/
+        /*   std::thread t1(&CoocBasedBuilder::readWords, this, std::ref(source));
+           std::thread t2(&CoocBasedBuilder::sendWords, this);
+           t1.join();
+           t2.join();*/
 
         while (!source.eof()) {
             readWords(source);
@@ -129,7 +129,7 @@ void CoocBasedBuilder::acquireCoocurrences() {//TODO make tokens instead of vect
     }
 }
 
-void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {//TODO memory bug
+void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {
     std::sort(acc.begin(), acc.end());
     const int size = acc.size();
     float weights[256];
@@ -137,8 +137,8 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {//TODO memory bug
         int d = i > 126 ? -256 + i : i;
         weights[i] = d == 0 ? 0 : 1./std::abs(d); //TODO hard-coded linear window, fix later
     }
-    std::vector<int64_t> prevRow{};
-    std::vector<int64_t> updatedRow{};
+    std::vector<cooc_token> prevRow{};
+    std::vector<cooc_token> updatedRow{};
     updatedRow.reserve(wordsList.size());
     int prevA = -1;
     int pos = 0; // insertion point
@@ -161,17 +161,17 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {//TODO memory bug
                 if (prevA >= 0){
                     updatedRow.insert(updatedRow.end(), prevRow.begin() + pos, prevRow.begin() + prevLength);
 
-                    if (cooc_[prevA].size() < updatedRow.size()) {
-                        cooc_[prevA].resize(updatedRow.size());
+                    if (cooc_1[prevA].size() < updatedRow.size()) {
+                        cooc_1[prevA].resize(updatedRow.size());
                     }
-                    std::copy(updatedRow.begin(), updatedRow.end(), cooc_[prevA].begin());
+                    std::copy(updatedRow.begin(), updatedRow.end(), cooc_1[prevA].begin());
                     //cooc_[prevA] = result;
                     int prev[] = {-1};
                     int prevAFinal = prevA;
                     //unlock rowLocks[prevA];
                 }
                 prevA = a;
-                prevRow = cooc_[a];
+                prevRow = cooc_1[a];
                 prevLength = prevRow.size();
                 pos = 0;
                 updatedRow.resize(0);
@@ -179,14 +179,17 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {//TODO memory bug
             //lock rowLocks[prevA];
 
 
-            int64_t  prevPacked;
+            cooc_token  prevPacked;
             while (pos < prevLength) { // merging previous version of the cooc row with current data
                 prevPacked = prevRow[pos];
-                auto prevB = static_cast<int32_t >(prevPacked >> 32);
+                auto prevB = prevPacked.j;
+                //auto prevB = static_cast<int32_t >(prevPacked >> 32);
                 if (prevB >= b) {
                     if (prevB == b) {
-                        auto int_to_float = static_cast<int32_t >(prevPacked & 0xFFFFFFFFL);
-                        weight += (*reinterpret_cast<float*>(&int_to_float));
+                        float w = prevPacked.cooccurence;
+                        //auto int_to_float = static_cast<int32_t >(prevPacked & 0xFFFFFFFFL);
+                        //weight += (*reinterpret_cast<float*>(&int_to_float));
+                        weight += w;
                         pos++;
                     }
                     break;
@@ -195,7 +198,8 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {//TODO memory bug
                 updatedRow.push_back(prevPacked);
                 pos++;
             }
-            int64_t repacked = (static_cast<int64_t >(b) << 32) | *reinterpret_cast<int*>(&weight);
+            //int64_t repacked = (static_cast<int64_t >(b) << 32) | *reinterpret_cast<int*>(&weight);
+            cooc_token repacked = {weight, b};
             updatedRow.push_back(repacked);
         }
 
@@ -203,10 +207,10 @@ void CoocBasedBuilder::merge(std::vector<int64_t> &acc) {//TODO memory bug
 
         if (prevA != -1) {
             //cooc_[prevA].insert(cooc_[prevA].begin(), updatedRow.begin(), updatedRow.end());
-            if (cooc_[prevA].size() < updatedRow.size()) {
-                cooc_[prevA].resize(updatedRow.size());
+            if (cooc_1[prevA].size() < updatedRow.size()) {
+                cooc_1[prevA].resize(updatedRow.size());
             }
-            std::copy(updatedRow.begin(), updatedRow.end(), cooc_[prevA].begin());
+            std::copy(updatedRow.begin(), updatedRow.end(), cooc_1[prevA].begin());
         }
     }
     //unlock rowLocks[prevA]
@@ -223,8 +227,8 @@ int32_t CoocBasedBuilder::index(std::string word) {
     return EmbeddingBuilderBase::index(word);
 }
 
-const std::vector<int64_t> & CoocBasedBuilder::cooc(size_t i) const {
-    return cooc_[i];
+const std::vector<CoocBasedBuilder::cooc_token> & CoocBasedBuilder::cooc(size_t i) const {
+    return cooc_1[i];
 }
 
 float CoocBasedBuilder::unpackWeight(std::vector<int64_t> &cooc, int32_t v) {
