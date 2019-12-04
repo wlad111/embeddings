@@ -68,12 +68,15 @@ std::unique_ptr<Embedding<std::string>> GloVeBuilder::fit() {
         auto softBiasRight_a = softBiasRight.accessor<float, 1>();
 
 
-        std::for_each(std::execution::par, vocab_size_range.begin(), vocab_size_range.end(), [&](size_t i) mutable {
-            const std::vector<int64_t> &coocI = cooc(i);
-            std::for_each(std::execution::seq, coocI.begin(), coocI.end(), [&](int64_t packed) mutable {
-                int j = packed >> 32;
-                auto int_to_float = static_cast<int32_t >(packed& 0xFFFFFFFFL);
-                float X_ij = *reinterpret_cast<float*>(&int_to_float);
+        std::for_each(std::execution::par_unseq, vocab_size_range.begin(), vocab_size_range.end(), [&](size_t i) mutable {
+            const std::vector<CoocBasedBuilder::cooc_token> &coocI = cooc(i);
+            std::for_each(std::execution::par_unseq, coocI.begin(), coocI.end(),
+                    [&](CoocBasedBuilder::cooc_token packed) mutable {
+                int j = packed.j;
+                //int j = packed >> 32;
+                float X_ij = packed.cooccurence;
+                //auto int_to_float = static_cast<int32_t >(packed& 0xFFFFFFFFL);
+                //float X_ij = *reinterpret_cast<float*>(&int_to_float);
 
                 double asum = 0;
                 for (int k = 0; k < dim_; k++) {

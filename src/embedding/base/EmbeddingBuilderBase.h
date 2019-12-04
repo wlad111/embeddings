@@ -86,8 +86,8 @@ protected:
 
 private:
     int minCount_ = 1;
-    int iterations_ = 25;
-    double step_ = 0.01;
+    int iterations_ = 100;
+    double step_ = 0.02;
     bool dictReady = false;
 
 };

@@ -7,7 +7,7 @@
 #include <base/EmbeddingImpl.h>
 
 int main() {
-    std::string dict_path("text8");
+    std::string dict_path("hobbit.txt");
     std::unique_ptr<Embedding<std::string>::Builder> glove(new GloVeBuilder(dict_path));
     std::unique_ptr<Embedding<std::string>> impl = glove->build();
 
