@@ -14,6 +14,7 @@
 //TODO maybe add logger
 
 
+
 class CoocBasedBuilder
         : public EmbeddingBuilderBase {
 
@@ -28,6 +29,7 @@ private:
 
     int32_t dense_count_ = 1000;
 
+    //TODO reorganize coocurrence matrix;
     std::vector<std::vector<int64_t>> cooc_;
 
     bool coocReady = false;

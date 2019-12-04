@@ -89,7 +89,7 @@ void CoocBasedBuilder::processWords(std::deque<std::string> &buf) {
     accumulators.clear();
 }
 
-void CoocBasedBuilder::acquireCoocurrences() {
+void CoocBasedBuilder::acquireCoocurrences() {//TODO make tokens instead of vector<vector<int>>
     if (!coocReady) {
         std::cout << "Generating cooccurences for " << path_ << std::endl;
 
