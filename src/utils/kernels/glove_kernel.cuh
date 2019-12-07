@@ -2,109 +2,158 @@
 #define GLOVE_KERNEL_CUH
 
 
-#include <cuda_runtime>
+#include <cuda_runtime.h>
 #include <cstdint>
 #include <cmath>
+#include <device_launch_parameters.h>
 
+#define BLOCK_SIZE 64
+#define DIM 64
 
-    struct cooc_token {
-        float cooccurence;
-        size_t i;
-        size_t j;
-    };
+namespace cuda {
 
+    namespace tools {
+
+        template <typename T>
+        __global__ void fill_arr_kernel(T* arr, T value, int64_t size) {
+            int64_t i = blockIdx.x * blockDim.x + threadIdx.x;
+            while (i < size) {
+                arr[i] = value;
+                i += gridDim.x * blockDim.x;
+            }
+        }
+
+        template <typename T>
+        void fill_arr(T* arr, T value, int64_t size) {
+            if (size > 0) {
+                dim3 numBlocks;
+                numBlocks.x = (size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+                numBlocks.y = 1;
+                numBlocks.z = 1;
+                fill_arr_kernel<T> <<<numBlocks, BLOCK_SIZE>>> (arr, value, size);
+            }
+        }
+    }
+
+    typedef struct {
+        int dim;
+        float step;
+    } options;
+
+    typedef struct {
+        int row;
+        int col;
+        float value;
+
+    } cooc_token_bidim;
+
+    typedef struct {
+        int size;
+        cooc_token_bidim *tokens;
+    } cooc_matrix;
 
     struct long_vector_array {
-        long* elements;
+        long *elements;
         size_t size;
     };
 
     struct float_vector_array {
-        float* elements;
-        size_t  size;
+        float *elements;
+        size_t size;
     };
 
     struct matrix {
-        float* elements;
+        float *elements;
         size_t num_rows;
         size_t num_cols;
     };
 
-    __device__ long get_vector_el(long_vector_array &v, size_t i){
-        if (i < v.size) {
-            return v.elements[i];
-        }
-        return cudaErrorInvalidDevicePointer;
-    }
-
-    __device__ float get_matrix_el(matrix &m, size_t row, size_t col){
+    /*__device__ float get_matrix_el(matrix &m, size_t row, size_t col){
         if (row < m.num_rows && col < m.num_cols) {
             return m.elements[row][col];
         }
         return cudaErrorInvalidDevicePointer;
     }
+*/
 
-    __device__ long get_sparse_cooc_el(sparse_cooc_raw &cooc, size_t row, size_t col) {
-        if (row < cooc.num_rows && col < cooc.row_lengths[row]){
-            return cooc.elements[row][col];
-        }
-        return cudaErrorInvalidDevicePointer;
+    __device__ float weighting_func(float x) {
+        return x < 10 ? powf(x / 10, 0.75) : 1;
     }
-
-    __device__ long_vector_array get_cooc_row(sparse_cooc_raw &cooc, size_t row) {
-    long_vector_array c_row;
-    c_row.size = cooc.row_lengths[row];
-    c_row.elements = cooc.elements[row];
-}
-
-__device__ float weighting_func(float x) {
-    return x < 10 ? powf(x / 10, 0.75) : 1;
-}
 
     // fit kernel for GLoVe
-    __global__ void fit_kernel(sparse_cooc_raw &cooc,
-                               matrix &left_vectors,
-                               matrix &right_vectors,
-                               float_vector_array &bias_left,
-                               float_vector_array &bias_right,
-                               matrix &softmax_left,
-                               matrix &softmax_right,
-                               float_vector_array &soft_bias_left,
-                               float_vector_array &soft_bias_right,
-                               float_vector_array &dL,
-                               float_vector_array &dR,
-                               int dim
-    ) {
-        int i = blockDim.x * blockIdx.x + threadIdx.x;
-        if (i < cooc.num_rows) {
-            long_vector_array cooc_row = get_cooc_row(cooc, i);
-            for (size_t packed = 0; packed < cooc_row.size; packed++) {
-                int j = packed >> 32;
-                int32_t int_to_float = (int32_t)(packed & 0xFFFFFFFFL);
-                float X_ij = *(float*)(&int_to_float);
-                float asum = 0;
-                for (int k = 0; k < dim; k++) {
-                    asum += left_vectors.elements[i][k]*right_vectors.elements[j][k];
-                }
-                float diff = bias_left.elements[i] + bias_right.elements[j] + asum - logf(X_ij);
-                float weight = weighting_func(X_ij);
-                float fdiff = 0.01 * diff * weight;
+    __global__ void fit_kernel(
+            const cooc_matrix cooc,
+            matrix left_vectors,
+            matrix right_vectors,
+            matrix grad_update_left,
+            matrix grad_update_right,
+            int dim) {
+        unsigned int id = threadIdx.x;
+        unsigned int token_id = blockIdx.x;
+        int i = cooc.tokens[token_id].row;
+        int j = cooc.tokens[token_id].col;
+        float X_ij = cooc.tokens[token_id].value;
 
-                for (int id = 0; id < dim; id++) {
-                    float dL = fdiff * right_vectors.elements[j][id];
-                    float dR = fdiff * left_vectors.elements[i][id];
-                    left_vectors.elements[i][id] -= dL / sqrtf(softmax_left.elements[i][id]);
-                    right_vectors.elements[j][id] -= dR / sqrtf(softmax_right.elements[j][id]);
-                    softmax_left.elements[i][id] += dL * dL;
-                    softmax_right.elements[j][id] += dR * dR;
-                }
-                bias_left.elements[i] -= fdiff / sqrtf(soft_bias_left.elements[i]);
-                bias_right.elements[j] -= fdiff / sqrt(soft_bias_right.elements[j]);
-                soft_bias_left.elements[i] += fdiff * fdiff;
-                soft_bias_right.elements[j] += fdiff *fdiff;
+        __shared__ float d_left_vec[BLOCK_SIZE];
+        __shared__ float d_right_vec[BLOCK_SIZE];
+        __shared__ float d_update_left[BLOCK_SIZE];
+        __shared__ float d_update_right[BLOCK_SIZE];
+        __shared__ float d_bias_left;
+        __shared__ float d_bias_right;
+        __shared__ float d_update_bias_left;
+        __shared__ float d_update_bias_right;
+
+        //an array to store pairwise products to compute dot product;
+        __shared__ float pairwise_product[BLOCK_SIZE];
+        __shared__ float diff;
+        __shared__ float fdiff;
+
+        d_left_vec[id] = left_vectors.elements[i * BLOCK_SIZE + id];
+        d_right_vec[id] = right_vectors.elements[j * BLOCK_SIZE + id];
+        d_update_left[id] = grad_update_left.elements[i * BLOCK_SIZE + id];
+        d_update_right[id] = grad_update_right.elements[j * BLOCK_SIZE + id];
+
+        __syncthreads();
+
+        pairwise_product[id] = d_left_vec[id] * d_right_vec[id];
+
+        __syncthreads();
+
+        //TODO maybe summarize dot product in multiple threads
+        if (threadIdx.x == 0) {
+            int sum = 0;
+            for (int i = 0; i < BLOCK_SIZE; i++) {
+                sum += pairwise_product[i];
             }
+            diff = sum + d_bias_left + d_bias_right - logf(X_ij);
         }
+        //TODO refactor this
+        d_left_vec[id] -= (0.01 * weighting_func(X_ij) * diff * d_right_vec[id]) / sqrtf(d_update_left[id]);
+        d_right_vec[id] -= (0.01 * weighting_func(X_ij) * diff * d_left_vec[id]) / sqrtf(d_update_right[id]);
+        d_update_left[id] += (0.01 * diff * d_right_vec[id] * weighting_func(X_ij)) *
+                             (0.01 * diff * d_right_vec[id] * weighting_func(X_ij));
+        d_update_right[id] += (0.01 * diff * d_left_vec[id] * weighting_func(X_ij)) *
+                              (0.01 * diff * d_left_vec[id] * weighting_func(X_ij));
+
+        if (threadIdx.x == 0) {
+            d_bias_left -= 0.01 * diff * weighting_func(X_ij) / sqrtf(d_update_bias_left);
+            d_bias_right -= 0.01 * diff * weighting_func(X_ij) / sqrtf(d_update_bias_right);
+            d_update_bias_left += 0.01 * diff * weighting_func(X_ij);
+            d_update_bias_right += 0.01 * diff * weighting_func(X_ij);
+        }
+
+        __syncthreads();
+        left_vectors.elements[i * BLOCK_SIZE + id] = d_left_vec[id];
+        right_vectors.elements[j * BLOCK_SIZE + id] = d_right_vec[id];
+        grad_update_left.elements[i * BLOCK_SIZE + id] = d_update_left[id];
+        grad_update_right.elements[j * BLOCK_SIZE + id] = d_update_right[id];
     }
 
+    void fit(cooc_matrix* coocMatrix) {
+        dim3 numBlocks;
+
+    }
+
+} //namespace cuda
 
 #endif

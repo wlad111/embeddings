@@ -24,6 +24,12 @@ public:
     virtual ~CoocBasedBuilder();
 
 
+    struct cooc_token_bidim {
+        float cooccutence;
+        int64_t i;
+        int64_t j;
+    };
+
 protected:
 
 
